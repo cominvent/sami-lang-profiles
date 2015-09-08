@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-mvn compile exec:java -Dexec.args="$*"
+export MAVEN_OPTS="-Dfile.encoding=UTF-8"; mvn compile exec:java -Dexec.args="$*"

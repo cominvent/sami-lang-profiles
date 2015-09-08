@@ -91,7 +91,7 @@ public class ProfileGenerator {
                     log.error("Neither strings file or url file exists for profile {}, skipping", profile);
                     return;
                 } else {
-                    crawl(urlsFile, stringsFile, 3);
+                    crawl(urlsFile, stringsFile, 2);
                     log.info("Completed crawl for profile {}", profile);
                 }
             } else {
@@ -109,12 +109,15 @@ public class ProfileGenerator {
         }
 
         try {
+            log.info("Generating langid profile");
             // Generate profile
             TextObjectFactory textObjectFactory = CommonTextObjectFactories.forIndexingCleanText();
             TextObject inputText = textObjectFactory.create();
             try (BufferedReader br = new BufferedReader(new FileReader(stringsFile))) {
                 String line;
                 while ((line = br.readLine()) != null) {
+                    //line = ruleMustNotContainChars(line);
+                    //line = removepuct(line);
                     inputText.append(line.trim());
                 }
             } catch (IOException e) {
@@ -129,7 +132,11 @@ public class ProfileGenerator {
                 .addText(inputText)
                 .build();
 
+            File profileFile = new File(pathPrefix+profile);
+            if (profileFile.exists())
+                Files.delete(profileFile.toPath());
             new LanguageProfileWriter().writeToDirectory(languageProfile, new File(profile));
+            log.info("Profile creation finished {}", profile);
         } catch (IOException e) {
             log.error("Failed creating profile for {}", profile, e);
         }
@@ -209,10 +216,10 @@ public class ProfileGenerator {
     }
 
     private String removepuct(String text) {
-        String punctRegex = "\\p{Punct}";
+        String punctRegex = "[\\p{Punct}♦©·¹º¼½¬Ω√\u009A\u0098\u0082\u0084]";
         int before = text.length();
         String ret = text.replaceAll(punctRegex, " ");
-        log.info("Removed pubctuation with regex {}. Sizes = {}/{}", punctRegex, before, ret.length());
+        //log.info("Removed pubctuation with regex {}. Sizes = {}/{}", punctRegex, before, ret.length());
         return ret;
     }
 
@@ -229,7 +236,7 @@ public class ProfileGenerator {
         String stopRegex = "(?i)\\b(" + StringUtils.join(stopwords, "|") + ")\\b";
         int before = text.length();
         String ret = text.replaceAll(stopRegex, " ");
-        log.info("Removed stopwords with regex {}. Sizes = {}/{}", stopRegex, before, ret.length());
+        //log.info("Removed stopwords with regex {}. Sizes = {}/{}", stopRegex, before, ret.length());
         return ret;
     }
 
@@ -244,7 +251,7 @@ public class ProfileGenerator {
 
     private String ruleMustContainChars(String text) {
         String chars = getProperty("mustContainChars");//ÁáČčĐđŊŋŠšŦŧŽž";
-        log.warn("Applying rule mustContainChars: {}. With chars {} for text {}", chars!=null && containsChars(text, chars), chars, text);
+        //log.warn("Applying rule mustContainChars: {}. With chars {} for text {}", chars!=null && containsChars(text, chars), chars, text);
         if (chars == null) return text;
         return containsChars(text, chars) ?
             text :
@@ -253,7 +260,7 @@ public class ProfileGenerator {
 
     private String ruleMustNotContainChars(String text) {
         String chars = getProperty("mustNotContainChars");//ÁáČčĐđŊŋŠšŦŧŽž";
-        log.warn("Applying rule mustNotContainChars: {}. With chars {} for text {}", chars!=null && containsChars(text, chars), chars, text);
+        //log.warn("Applying rule mustNotContainChars: {}. With chars {} for text {}", chars!=null && containsChars(text, chars), chars, text);
         if (chars == null) return text;
         return containsChars(text, chars) ?
             "" :
